@@ -16,12 +16,22 @@ function Get-ClipboardImage {
 function Get-ImageHash {
     param([System.Drawing.Image]$Image)
     if (-not $Image) { return "" }
+
     $ms = New-Object System.IO.MemoryStream
-    $Image.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
-    $bytes = $ms.ToArray()
-    $ms.Close()
-    $hash = [System.Security.Cryptography.MD5]::Create().ComputeHash($bytes)
-    return [BitConverter]::ToString($hash) -replace '-', ''
+    try {
+        $Image.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+        $bytes = $ms.ToArray()
+    } finally {
+        $ms.Close()
+    }
+
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    try {
+        $hash = $md5.ComputeHash($bytes)
+        return [BitConverter]::ToString($hash) -replace '-', ''
+    } finally {
+        $md5.Dispose()
+    }
 }
 
 function Save-ClipboardImage {
@@ -29,7 +39,12 @@ function Save-ClipboardImage {
         [System.Drawing.Image]$Image,
         [string]$OutputDir
     )
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+
+    if (-not (Test-Path $OutputDir)) {
+        New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd_HHmmssfff"
     $filename = "clip_$timestamp.png"
     $path = Join-Path $OutputDir $filename
     $Image.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -38,6 +53,9 @@ function Save-ClipboardImage {
 
 function Get-ImageBase64 {
     param([string]$ImagePath)
+    if (-not (Test-Path $ImagePath)) {
+        return ""
+    }
     $bytes = [System.IO.File]::ReadAllBytes($ImagePath)
     return [Convert]::ToBase64String($bytes)
 }
