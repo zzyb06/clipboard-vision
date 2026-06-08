@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # install.ps1 — Install and configure Clipboard Vision
 
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
@@ -80,7 +80,7 @@ if ($startup -eq 'y') {
     $wshell = New-Object -ComObject WScript.Shell
     $shortcut = $wshell.CreateShortcut($lnkPath)
     $shortcut.TargetPath = "powershell.exe"
-    $shortcut.Arguments = "-WindowStyle Hidden -File `"$(Join-Path $ProjectRoot 'src\monitor.ps1')`"
+    $shortcut.Arguments = '-WindowStyle Hidden -File "' + (Join-Path $ProjectRoot 'src\monitor.ps1') + '"'
     $shortcut.Save()
     Write-Host "Startup shortcut created." -ForegroundColor Green
 }
@@ -88,3 +88,4 @@ if ($startup -eq 'y') {
 Write-Host ""
 Write-Host "Installation complete!" -ForegroundColor Cyan
 Write-Host "Run .\start.ps1 to start monitoring." -ForegroundColor Cyan
+
