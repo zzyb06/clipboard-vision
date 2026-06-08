@@ -1,0 +1,10 @@
+{
+  "api_key": "",
+  "model": "<你的豆包视觉模型名，如 doubao-vision-pro-32k>",
+  "api_base": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+  "system_prompt": "你是一个视觉识别模块，请详细描述这张图片的内容，包括其中的文字、布局、颜色等关键信息。",
+  "poll_interval_ms": 2000,
+  "claude_code_window_keywords": ["Claude Code", "claude"],
+  "output_dir": "output",
+  "max_history": 100
+}

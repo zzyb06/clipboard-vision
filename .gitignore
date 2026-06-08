@@ -1,0 +1,13 @@
+# Runtime output
+output/
+config.json
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
