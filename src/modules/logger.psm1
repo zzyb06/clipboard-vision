@@ -25,13 +25,44 @@ $Content
 
     Add-Content -Path $LogPath -Value $entry -Encoding UTF8
 
-    # Trim old entries if exceeding max_history
-    $lines = Get-Content $LogPath -Encoding UTF8
-    if ($lines.Count -gt ($MaxHistory * 5 + 10)) {
-        # Keep the header line + recent entries
-        $header = $lines[0]
-        $recentLines = $lines[-1..(-($MaxHistory * 5))] | Where-Object { $_ -ne $null }
-        $header, "", $recentLines | Set-Content $LogPath -Encoding UTF8
+    # Trim old entries: count "## " lines; if > MaxHistory, keep only recent ones
+    $allLines = Get-Content $LogPath -Encoding UTF8
+    $headerLines = @()
+    $entryLines = @()
+    $currentEntry = @()
+    $inHeader = $true
+    $entryCount = 0
+
+    foreach ($line in $allLines) {
+        if ($line -match '^## ') {
+            $entryCount++
+            if ($inHeader) {
+                $inHeader = $false
+            } else {
+                # Save previous entry
+                if ($currentEntry.Count -gt 0) {
+                    $entryLines += ,@($currentEntry)
+                }
+            }
+            $currentEntry = @($line)
+        } elseif ($inHeader) {
+            $headerLines += $line
+        } else {
+            $currentEntry += $line
+        }
+    }
+    # Save last entry
+    if ($currentEntry.Count -gt 0) {
+        $entryLines += ,@($currentEntry)
+    }
+
+    if ($entryCount -gt $MaxHistory) {
+        $keep = $entryLines[-$MaxHistory..-1]
+        $output = @($headerLines -join "`n")
+        foreach ($e in $keep) {
+            $output += $e -join "`n"
+        }
+        $output -join "`n" | Set-Content $LogPath -Encoding UTF8
     }
 }
 

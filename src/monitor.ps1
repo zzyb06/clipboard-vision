@@ -73,21 +73,32 @@ while ($true) {
     $script:isProcessing = $true
     Write-Host "[Clipboard Vision] New image detected (hash: $($hash.Substring(0,8)))..."
 
-    $saved = Save-ClipboardImage -Image $image -OutputDir $imagesDir
-    $image.Dispose()
+    try {
+        $saved = Save-ClipboardImage -Image $image -OutputDir $imagesDir
+        $result = Send-DoubaoVisionRequest -ImagePath $saved.Path `
+            -Model $config.model `
+            -ApiBase $config.api_base `
+            -ApiKey $config.api_key `
+            -SystemPrompt $config.system_prompt
 
-    $result = Send-DoubaoVisionRequest -ImagePath $saved.Path `
-        -Model $config.model `
-        -ApiBase $config.api_base `
-        -ApiKey $config.api_key `
-        -SystemPrompt $config.system_prompt
+        # Only advance hash on successful API response
+        if ($result -notmatch '^\[API Error\]') {
+            Write-VisionLog -LogPath $logPath `
+                -ImageFilename $saved.Filename `
+                -Content $result `
+                -MaxHistory $config.max_history
 
-    Write-VisionLog -LogPath $logPath `
-        -ImageFilename $saved.Filename `
-        -Content $result `
-        -MaxHistory $config.max_history
-
-    $script:lastImageHash = $hash
-    $script:isProcessing = $false
-    Write-Host "[Clipboard Vision] Result written to $logPath"
+            $script:lastImageHash = $hash
+            Write-Host "[Clipboard Vision] Result written to $logPath"
+        } else {
+            Write-Host "[Clipboard Vision] $result" -ForegroundColor Red
+            # Don't advance hash — will retry same image next time
+        }
+    } catch {
+        Write-Host "[Clipboard Vision] Unexpected error: $($_.Exception.Message)" -ForegroundColor Red
+        # Don't advance hash — will retry same image next time
+    } finally {
+        $image.Dispose()
+        $script:isProcessing = $false
+    }
 }

@@ -11,6 +11,9 @@ function Send-DoubaoVisionRequest {
     )
 
     $base64 = Get-ImageBase64 -ImagePath $ImagePath
+    if ([string]::IsNullOrEmpty($base64)) {
+        return "[API Error] 无法读取图片文件: $ImagePath"
+    }
     $dataUrl = "data:image/png;base64,$base64"
 
     $body = @{
@@ -36,7 +39,6 @@ function Send-DoubaoVisionRequest {
     }
 
     $lastError = $null
-    # Retry up to 2 times
     for ($attempt = 1; $attempt -le 3; $attempt++) {
         try {
             $response = Invoke-RestMethod -Uri $ApiBase -Method Post `
@@ -45,12 +47,19 @@ function Send-DoubaoVisionRequest {
             return $response.choices[0].message.content
         } catch {
             $lastError = $_
+            $statusCode = $_.Exception.Response.StatusCode.value__
+
+            # Don't retry client errors (4xx) — they're permanent
+            if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                return "[API Error] 请求被拒绝 (HTTP $statusCode): $($_.Exception.Message)"
+            }
+
+            # Retry server errors and network issues (5xx, timeout, etc.)
             if ($attempt -lt 3) {
-                Start-Sleep -Seconds 3
+                Start-Sleep -Seconds ([Math]::Min($attempt * 3, 10))
             }
         }
     }
 
-    # All retries failed
     return "[API Error] 请求失败（已重试3次）: $($lastError.Exception.Message)"
 }
