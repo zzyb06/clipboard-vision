@@ -10,7 +10,7 @@ function Get-Config {
     }
 
     try {
-        $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+        $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     } catch {
         Write-Error "config.json is not valid JSON. Run install.ps1 to regenerate it."
         exit 1

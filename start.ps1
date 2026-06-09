@@ -2,7 +2,7 @@
 # start.ps1 — Launch Clipboard Vision monitor
 
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
-$monitorPath = Join-Path $ProjectRoot "src" "monitor.ps1"
+$monitorPath = Join-Path (Join-Path $ProjectRoot "src") "monitor.ps1"
 
 if (-not (Test-Path $monitorPath)) {
     Write-Host "monitor.ps1 not found at: $monitorPath" -ForegroundColor Red

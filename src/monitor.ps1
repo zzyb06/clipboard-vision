@@ -16,8 +16,8 @@ Import-Module (Join-Path $PSScriptRoot "modules\vision_api.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "modules\logger.psm1") -Force
 
 # Resolve output paths
-$imagesDir = Join-Path $ProjectRoot $config.output_dir "images"
-$logPath = Join-Path $ProjectRoot $config.output_dir "vision_log.md"
+$imagesDir = Join-Path (Join-Path $ProjectRoot $config.output_dir) "images"
+$logPath = Join-Path (Join-Path $ProjectRoot $config.output_dir) "vision_log.md"
 if (-not (Test-Path $imagesDir)) { New-Item -ItemType Directory -Path $imagesDir -Force | Out-Null }
 
 # State
@@ -28,17 +28,23 @@ Write-Host "[Clipboard Vision] Started — polling every $($config.poll_interval
 Write-Host "[Clipboard Vision] Checking for keywords: $($config.claude_code_window_keywords -join ', ')"
 Write-Host "[Clipboard Vision] Press Ctrl+C to stop"
 
-# Trap Ctrl+C for clean exit
-[Console]::TreatControlCAsInput = $true
+# Trap Ctrl+C for clean exit (graceful if no console, e.g. background job)
+try { [Console]::TreatControlCAsInput = $true } catch {}
 
 while ($true) {
-    # Check for Ctrl+C
-    if ([Console]::KeyAvailable) {
-        $key = [Console]::ReadKey($true)
-        if ($key.Modifiers -band [ConsoleModifiers]'Control' -and $key.Key -eq 'C') {
-            Write-Host "`n[Clipboard Vision] Stopped."
-            exit 0
+    # Check for Ctrl+C (graceful if no console)
+    $gotCtrlC = $false
+    try {
+        if ([Console]::KeyAvailable) {
+            $key = [Console]::ReadKey($true)
+            if ($key.Modifiers -band [ConsoleModifiers]'Control' -and $key.Key -eq 'C') {
+                $gotCtrlC = $true
+            }
         }
+    } catch { }
+    if ($gotCtrlC) {
+        Write-Host "`n[Clipboard Vision] Stopped."
+        exit 0
     }
 
     # 1. Skip if API call in flight
