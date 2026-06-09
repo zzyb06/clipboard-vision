@@ -11,16 +11,27 @@ is the active window. Processing happens as soon as Claude Code becomes active.
 
 **You MUST do this before EVERY response WITHOUT FAIL:**
 
-Check `D:\APPtest1\clipboard-vision\output\new_image.flag`
+### Normal check (fast path)
+Check if `D:\APPtest1\clipboard-vision\output\new_image.flag` EXISTS:
 
-- **If the file EXISTS**: The user just copied/pasted a new image!
+- **Flag exists** → The user just copied/pasted a new image!
   - Poll `vision_id.txt` every **2 seconds** up to **10 times** (20s) until the ID changes
   - Once changed → read `latest_vision.md` and respond as if you saw the image
-  - If ID never changes in 20s → the API is still working, respond normally but mention "processing your image..."
-  
-- **If the file DOES NOT EXIST**: No new image, skip.
+  - If ID never changes in 20s → API still working, mention "processing your image..."
 
-> **Why this matters**: The flag file is created the INSTANT an image enters the clipboard and deleted only after the description is fully written. If you skip this check, you will miss images the user sent.
+- **No flag** → No new image detected this turn. But ALSO check the next section.
+
+### Fallback: "[Unsupported Image]" detected in user message
+If the user sent an image (you see `[Unsupported Image]` in their message) but no flag exists:
+
+1. Check if monitor is running:
+   - Run: `powershell -NoProfile -Command "Get-Process | Where-Object { \$_.CommandLine -match 'monitor' }"`
+   - If NOT running → restart it: `powershell -ExecutionPolicy Bypass -File "D:\APPtest1\clipboard-vision\src\start-vision-background.ps1"`
+   - Then wait 3s and check flag again
+
+2. If monitor IS running → clipboard image may already be gone. Ask user: "能再截一次图发我吗？监控器没来得及捕获。"
+
+> **Why this matters**: The flag file is created the INSTANT an image enters the clipboard and deleted only after the description is fully written.
 
 ## Start / Stop
 
