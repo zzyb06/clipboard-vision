@@ -30,6 +30,27 @@ $script:cachedImagePath  = ""     # path to cached image file
 $script:lastProcessedHash = ""    # hash of last image sent to API
 $script:isProcessing = $false     # API call in flight
 
+# Read .last_hash to avoid re-processing already-handled images
+$hashFilePath = Join-Path $outputDir ".last_hash"
+if (Test-Path $hashFilePath) {
+    $savedHash = (Get-Content $hashFilePath -Encoding UTF8 -Raw).Trim()
+    if ($savedHash) {
+        $script:lastProcessedHash = $savedHash
+        Write-Host "[Clipboard Vision] Last hash loaded, will skip already-processed image"
+    }
+}
+
+# Read existing vision_id to avoid re-processing already-handled images
+$idPath = Join-Path $outputDir "vision_id.txt"
+if (Test-Path $idPath) {
+    $existingId = (Get-Content $idPath -Encoding UTF8 -Raw).Trim()
+    if ($existingId) {
+        # Store the ID as a pseudo-hash to prevent re-processing
+        $script:lastProcessedHash = "vision_$existingId"
+        Write-Host "[Clipboard Vision] Last processed: $existingId"
+    }
+}
+
 Write-Host "[Clipboard Vision] Started - polling every $($config.poll_interval_ms)ms"
 Write-Host "[Clipboard Vision] Always watching clipboard, processing when Claude Code is active"
 Write-Host "[Clipboard Vision] Press Ctrl+C to stop"
@@ -106,6 +127,9 @@ while ($true) {
                     $script:lastProcessedHash = $script:cachedImageHash
                     # Clear flag: processing complete
                     if (Test-Path $flagPath) { Remove-Item $flagPath -Force }
+                    # Save hash for next startup
+                    $hashFilePath = Join-Path $outputDir ".last_hash"
+                    $script:cachedImageHash | Set-Content -Path $hashFilePath -Encoding UTF8 -NoNewline
                     Write-Host "[Clipboard Vision] Result written"
                 } else {
                     Write-Host "[Clipboard Vision] $result" -ForegroundColor Red

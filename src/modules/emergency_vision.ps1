@@ -52,4 +52,8 @@ Write-LatestVision -OutputDir $outputDir `
     -ImageFilename $saved.Filename `
     -Content $result
 
+# Save hash so monitor doesn't re-process this image on next startup
+$hashPath = Join-Path $outputDir ".last_hash"
+$hash | Set-Content -Path $hashPath -Encoding UTF8 -NoNewline
+
 Write-Output "SUCCESS: Result written to $outputDir"
