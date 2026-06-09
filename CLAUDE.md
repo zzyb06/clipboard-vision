@@ -9,9 +9,14 @@ output directory for Claude Code to consume automatically.
 **Before each response**, always check so you have the latest visual context:
 
 1. Read `output/vision_id.txt` to get the current image ID
-2. **If the ID matches the last one you processed**: wait 3 seconds and re-check
-   - ID still the same → no new image, skip
-   - ID changed → the monitor just finished processing a newly pasted image → proceed to step 3
+2. **If the ID matches the last one you processed**: the monitor may be processing
+   a newly pasted image (API takes ~10 seconds). Poll up to 4 times with 3-second
+   intervals:
+   - 1st check (3s): ID still same → wait again
+   - 2nd check (6s): ID still same → wait again
+   - 3rd check (9s): ID still same → wait again
+   - 4th check (12s): ID still same → give up, no new image this turn
+   - Any check shows a new ID → proceed to step 3 immediately
 3. **If the ID changed** (or no "last ID"):
    - Read `output/latest_vision.md` — it always contains the complete description
    - Treat the description as visual context the user provided — respond as if you
