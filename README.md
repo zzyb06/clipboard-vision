@@ -6,20 +6,16 @@
 
 ## Claude Code Skill
 
-本项目包含一个 Claude Code **一键安装 skill**，方便其他用户快速部署：
+本项目包含一个 Claude Code **skill**，让纯文本模型的 Claude Code 也能"看懂"图片：
 
-```
-/clipboard-vision
-```
-
-Skill 位于 [`skills/clipboard-vision/SKILL.md`](skills/clipboard-vision/SKILL.md)，安装后 Claude Code 会自动识别图片——`[Unsupported Image]` 不再出现。
-
-**安装 skill：**
+**安装（仅需一行）：**
 ```powershell
-# 复制 skill 到 Claude Code 的 skills 目录
-xcopy /E skills\clipboard-vision %USERPROFILE%\.claude\skills\clipboard-vision\
+xcopy /E /I skills\clipboard-vision %USERPROFILE%\.claude\skills\clipboard-vision\
 ```
-然后在 Claude Code 中输入 `/clipboard-vision` 按提示操作即可。
+
+**使用：**
+在 Claude Code 中输入 `/clipboard-vision`，按引导完成 API Key 配置即可。
+此后你发送的每张截图或图片，Claude Code 都会自动识别并回答。
 
 ## 功能
 
