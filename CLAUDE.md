@@ -6,16 +6,16 @@ output directory for Claude Code to consume automatically.
 
 ## Auto-reading image descriptions
 
-**Before each response**, always do this check so you have the latest visual context:
+**Before each response**, always check so you have the latest visual context:
 
 1. Read `output/vision_id.txt` to get the current image ID
 2. If the ID matches the last one you processed → no new image, skip
-3. If the ID changed (or you have no "last ID") → read `output/latest_vision.md`
-4. Treat the description as visual context the user has provided — respond as if you
-   saw the image yourself, referencing its contents naturally
-
-This ensures you always see what the user is showing you without them having to
-explicitly describe it.
+3. If the ID changed (or you have no "last ID"):
+   a. **Wait 2 seconds** (the API call may still be finishing)
+   b. Read `output/latest_vision.md` — it always contains the complete description
+   c. Treat the description as visual context the user provided — respond as if you
+      saw the image yourself, referencing its contents naturally
+   d. Update your "last ID" for next time
 
 ## Start / Stop
 
