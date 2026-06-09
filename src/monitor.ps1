@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# monitor.ps1 — Clipboard Vision main loop
+# monitor.ps1 - Clipboard Vision main loop
 # Watches clipboard for images and processes them via Vision API
 # Works regardless of whether Claude Code is the active window
 
@@ -24,17 +24,17 @@ $flagPath = Join-Path $outputDir "new_image.flag"
 if (-not (Test-Path $imagesDir)) { New-Item -ItemType Directory -Path $imagesDir -Force | Out-Null }
 
 # === State ===
-$script:lastClipboardHash = ""    # hash of image currently on clipboard (dedup)
+$script:lastClipboardHash = ""    # hash of image currently on clipboard
 $script:cachedImageHash  = ""     # hash of cached image waiting to be processed
 $script:cachedImagePath  = ""     # path to cached image file
 $script:lastProcessedHash = ""    # hash of last image sent to API
 $script:isProcessing = $false     # API call in flight
 
-Write-Host "[Clipboard Vision] Started — polling every $($config.poll_interval_ms)ms"
+Write-Host "[Clipboard Vision] Started - polling every $($config.poll_interval_ms)ms"
 Write-Host "[Clipboard Vision] Always watching clipboard, processing when Claude Code is active"
 Write-Host "[Clipboard Vision] Press Ctrl+C to stop"
 
-# Trap Ctrl+C for clean exit (graceful if no console, e.g. background job)
+# Trap Ctrl+C for clean exit
 try { [Console]::TreatControlCAsInput = $true } catch {}
 
 while ($true) {
@@ -56,7 +56,6 @@ while ($true) {
     }
 
     # === Step 1: Always check clipboard for new images ===
-    # (independent of whether Claude Code is active)
     if ([System.Windows.Forms.Clipboard]::ContainsImage()) {
         $image = Get-ClipboardImage
         if ($image) {
@@ -70,7 +69,7 @@ while ($true) {
                 $saved = Save-ClipboardImage -Image $image -OutputDir $imagesDir
                 $script:cachedImageHash = $hash
                 $script:cachedImagePath = $saved.Path
-                # Raise flag: signals to Claude Code that a new image is available
+                # Raise flag for Claude Code
                 Set-Content -Path $flagPath -Value "pending" -Encoding UTF8 -NoNewline
                 Write-Host "[Clipboard Vision] New image cached (hash: $($hash.Substring(0,8)))"
             }
@@ -107,23 +106,20 @@ while ($true) {
                     $script:lastProcessedHash = $script:cachedImageHash
                     # Clear flag: processing complete
                     if (Test-Path $flagPath) { Remove-Item $flagPath -Force }
-                    Write-Host "[Clipboard Vision] Result written ✓"
+                    Write-Host "[Clipboard Vision] Result written"
                 } else {
                     Write-Host "[Clipboard Vision] $result" -ForegroundColor Red
-                    # Don't advance processed hash — will retry same image next time
                 }
             } catch {
                 Write-Host "[Clipboard Vision] Error: $($_.Exception.Message)" -ForegroundColor Red
             } finally {
                 $script:isProcessing = $false
-                # Clear cache only on success
                 if ($script:lastProcessedHash -eq $script:cachedImageHash) {
                     $script:cachedImageHash = ""
                     $script:cachedImagePath = ""
                 }
             }
         } else {
-            # Same hash already processed — clear cache
             $script:cachedImageHash = ""
             $script:cachedImagePath = ""
         }
