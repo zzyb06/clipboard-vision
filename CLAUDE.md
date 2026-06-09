@@ -15,9 +15,12 @@ is the active window. Processing happens as soon as Claude Code becomes active.
 Check if `D:\APPtest1\clipboard-vision\output\new_image.flag` EXISTS:
 
 - **Flag exists** → The user just copied/pasted a new image!
-  - Poll `vision_id.txt` every **2 seconds** up to **10 times** (20s) until the ID changes
+  - **First**: read `vision_id.txt` and `latest_vision.md`'s first line (`<!-- vid: ... -->`)
+  - If the ID differs from what you last saw → the API already finished!
+    - Read `latest_vision.md` and respond as if you saw the image
+  - If same → poll every **500ms** up to **16 times** (8s) until ID changes
   - Once changed → read `latest_vision.md` and respond as if you saw the image
-  - If ID never changes in 20s → API still working, mention "processing your image..."
+  - If ID never changes in 8s → API still working, mention "processing your image..."
 
 - **No flag** → No new image detected this turn. But ALSO check the next section.
 
