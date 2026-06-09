@@ -1,27 +1,26 @@
 # Clipboard Vision
 
-A background tool that monitors clipboard images when Claude Code is the active window,
-describes them via 豆包/火山引擎 Vision API, and writes structured descriptions to the
-output directory for Claude Code to consume automatically.
+A background tool that monitors clipboard images and describes them via
+豆包/火山引擎 Vision API. Results are written to structured files for Claude Code
+to consume automatically.
 
-## Auto-reading image descriptions
+Images are detected **instantly** (500ms polling) regardless of whether Claude Code
+is the active window. Processing happens as soon as Claude Code becomes active.
 
-**Before each response**, always check so you have the latest visual context:
+## Auto-reading image descriptions — MANDATORY
 
-1. Read `output/vision_id.txt` to get the current image ID
-2. **If the ID matches the last one you processed**: the monitor may be processing
-   a newly pasted image (API takes ~10 seconds). Poll up to 4 times with 3-second
-   intervals:
-   - 1st check (3s): ID still same → wait again
-   - 2nd check (6s): ID still same → wait again
-   - 3rd check (9s): ID still same → wait again
-   - 4th check (12s): ID still same → give up, no new image this turn
-   - Any check shows a new ID → proceed to step 3 immediately
-3. **If the ID changed** (or no "last ID"):
-   - Read `output/latest_vision.md` — it always contains the complete description
-   - Treat the description as visual context the user provided — respond as if you
-     saw the image yourself, referencing its contents naturally
-   - Update your "last ID" for next time
+**You MUST do this before EVERY response WITHOUT FAIL:**
+
+Check `D:\APPtest1\clipboard-vision\output\new_image.flag`
+
+- **If the file EXISTS**: The user just copied/pasted a new image!
+  - Poll `vision_id.txt` every **2 seconds** up to **10 times** (20s) until the ID changes
+  - Once changed → read `latest_vision.md` and respond as if you saw the image
+  - If ID never changes in 20s → the API is still working, respond normally but mention "processing your image..."
+  
+- **If the file DOES NOT EXIST**: No new image, skip.
+
+> **Why this matters**: The flag file is created the INSTANT an image enters the clipboard and deleted only after the description is fully written. If you skip this check, you will miss images the user sent.
 
 ## Start / Stop
 
@@ -29,6 +28,18 @@ output directory for Claude Code to consume automatically.
   `SessionStart` hook in `~/.claude/settings.json`)
 - **Stop**: Run `.\src\stop-vision-background.ps1` to stop the background monitor
 - **Foreground mode**: Run `.\start.ps1` for visible monitoring with console logs
+- **Status check**: Run `.\src\stop-vision-background.ps1` (shows if running)
+
+## How images are detected
+
+| How you send the image | Detection mechanism |
+|---|---|
+| Screenshot (Win+Shift+S) → Ctrl+V paste | Clipboard monitor catches instantly |
+| Copy image (Ctrl+C) → Ctrl+V paste | Clipboard monitor catches instantly |
+| Drag & drop image file | Image must be on clipboard — same as paste |
+| Chat "[Unsupported Image]" | Only works if image went through clipboard first |
+
+**For best results**: screenshot or copy the image, then Ctrl+V paste into chat.
 
 ## Configuration
 
@@ -36,7 +47,7 @@ Edit `config.json`:
 - `api_key`: 豆包/火山引擎 ARK API Key
 - `model`: Vision model name (e.g., `doubao-seed-2-0-lite-260428`)
 - `system_prompt`: Prompt sent to the vision API (in Chinese)
-- `poll_interval_ms`: Clipboard poll interval (default 2000ms)
+- `poll_interval_ms`: Clipboard poll interval (default 500ms)
 - `claude_code_window_keywords`: Keywords to detect Claude Code window
 
 ## Output files
@@ -57,7 +68,7 @@ clipboard-vision/
 ├── start.ps1
 ├── install.ps1
 ├── src/
-│   ├── monitor.ps1        # Main loop
+│   ├── monitor.ps1        # Main loop (improved: always watches clipboard)
 │   ├── config.ps1         # Config loader
 │   └── modules/
 │       ├── window.psm1    # Foreground window detection

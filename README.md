@@ -124,7 +124,7 @@ cd clipboard-vision
 | `model` | 视觉模型名 | `doubao-seed-2-0-lite-260428` |
 | `api_base` | API 端点 | `https://ark.cn-beijing.volces.com/api/v3/chat/completions` |
 | `system_prompt` | 识别提示词 | 中文详细描述 |
-| `poll_interval_ms` | 轮询间隔（毫秒） | `2000` |
+| `poll_interval_ms` | 轮询间隔（毫秒） | `500` |
 | `claude_code_window_keywords` | 窗口匹配关键词 | `["Claude Code", "claude"]` |
 | `output_dir` | 输出目录 | `output` |
 | `max_history` | 日志保留条数 | `100` |
