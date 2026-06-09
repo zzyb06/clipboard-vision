@@ -16,8 +16,9 @@ Import-Module (Join-Path $PSScriptRoot "modules\vision_api.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "modules\logger.psm1") -Force
 
 # Resolve output paths
-$imagesDir = Join-Path (Join-Path $ProjectRoot $config.output_dir) "images"
-$logPath = Join-Path (Join-Path $ProjectRoot $config.output_dir) "vision_log.md"
+$outputDir = Join-Path $ProjectRoot $config.output_dir
+$imagesDir = Join-Path $outputDir "images"
+$logPath = Join-Path $outputDir "vision_log.md"
 if (-not (Test-Path $imagesDir)) { New-Item -ItemType Directory -Path $imagesDir -Force | Out-Null }
 
 # State
@@ -93,6 +94,9 @@ while ($true) {
                 -ImageFilename $saved.Filename `
                 -Content $result `
                 -MaxHistory $config.max_history
+            Write-LatestVision -OutputDir $outputDir `
+                -ImageFilename $saved.Filename `
+                -Content $result
 
             $script:lastImageHash = $hash
             Write-Host "[Clipboard Vision] Result written to $logPath"

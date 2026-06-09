@@ -66,4 +66,33 @@ $Content
     }
 }
 
-Export-ModuleMember -Function Write-VisionLog
+function Write-LatestVision {
+    param(
+        [string]$OutputDir,
+        [string]$ImageFilename,
+        [string]$Content
+    )
+
+    if (-not (Test-Path $OutputDir)) {
+        New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    }
+
+    # Vision ID derived from the image filename (e.g. clip_20260609_091234)
+    $visionId = [System.IO.Path]::GetFileNameWithoutExtension($ImageFilename)
+
+    # Overwrite latest_vision.md with the newest description
+    $latestPath = Join-Path $OutputDir "latest_vision.md"
+    $latestBody = @"
+<!-- vid: $visionId -->
+# Latest Clipboard Image
+
+$Content
+"@
+    Set-Content -Path $latestPath -Value $latestBody -Encoding UTF8
+
+    # Overwrite vision_id.txt
+    $idPath = Join-Path $OutputDir "vision_id.txt"
+    $visionId | Set-Content -Path $idPath -Encoding UTF8
+}
+
+Export-ModuleMember -Function Write-VisionLog, Write-LatestVision
